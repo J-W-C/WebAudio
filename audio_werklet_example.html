@@ -41,16 +41,16 @@
         const td_620 = sample_hz / 620.0 / Math.PI / 2.0;
 
         // Build the test waveform
-        const samples = 157 * 250;
+        const samples = 1 * sample_hz;
         let wave = new Int16Array(samples);
         for (let s = 0; s < samples; s++) {
             let sample = (Math.sin(s / td_480) + Math.sin(s / td_620)) / 2.0;
             wave[s] = Math.trunc(0x3fff * sample);
         }
 
-        // Send it in chunks to the Worklet processor
-        for (let n = 0; n < 250; n++) {
-            let array = wave.slice(n * 157, n * 157 + 157);
+        // Send it in (20ms) chunks to the Worklet processor
+        for (let n = 0; n < wave.length / 320;  n++) {
+            let array = wave.slice(n * 320, (n + 1) * 320);
             Player_node.port.postMessage(array);
         }
     }
