@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+    <title>AudioBuffer example</title>
+  </head>
+
+  <body>
+    <h1>AudioBuffer example</h1>
+    <button>Make Telephone Sound</button>
+    <pre></pre>
+  </body>
+
+  <script>
+
+    // Display this script in page's preformatted secion
+    const myScript = document.querySelector('script');
+    const pre = document.querySelector('pre');
+    pre.innerHTML = myScript.innerHTML;
+
+    const button = document.querySelector('button');
+
+    let AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    button.onclick = function() {
+
+        if (!audioCtx) {
+            audioCtx = new AudioContext({latencyHint: "interactive", sampleRate: 16000});
+        }
+
+        let sample_hz = audioCtx.sampleRate;
+
+        console.log('XXX - audioContext sampleRate = ' + sample_hz);
+
+        tone_duration = 5.0
+
+        // Create a (persistant) AudioBuffer, "waveform", and populate its data array
+        // with a generated tone.
+
+        let frame_count = sample_hz * tone_duration;
+        let waveform = audioCtx.createBuffer(1, frame_count, sample_hz);
+        let buffer_data_array = waveform.getChannelData(0);
+
+        // Bell Precise tone plan                          Dial  Ring  Busy  High
+        // ----------------------------------------------------------------------
+        td_350 = sample_hz / 350.0 / Math.PI / 2.0;  //     X
+        td_440 = sample_hz / 440.0 / Math.PI / 2.0;  //     X     X
+        td_480 = sample_hz / 480.0 / Math.PI / 2.0;  //           X     X     X
+        td_620 = sample_hz / 620.0 / Math.PI / 2.0;  //                 X
+
+        console.log('XXX - frequency divisor 440 = ' + td_440);
+
+        for (let i = 0; i < frame_count; i++) {
+            buffer_data_array[i] = (Math.sin(i / td_350) + Math.sin(i / td_440)) / 2.0;
+        }
+
+        // ``An AudioBufferSourceNode can only be played once; after each call to
+        // start(). you have to create a new node if you want to play the same sound
+        // again. Fortunately, these nodes are very inexpensive to create, and the
+        // actual AudioBuffers can be reused for multiple plays of the sound. Indeed,
+        // you can use these nodes in a "fire and forget" manner: create the node,
+        // call start() to begin playing the sound, and don't even bother to hold a
+        // reference to it.''
+
+        let source = audioCtx.createBufferSource();
+        source.buffer = waveform;
+        source.connect(audioCtx.destination);
+        source.start();
+
+        source.onended = () => {
+            console.log('Sound finished');
+        }
+    }
+
+  </script>
+</html>
+

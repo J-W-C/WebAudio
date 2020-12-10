@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+    <title>AudioWorklet example</title>
+  </head>
+
+  <body>
+    <h1>AudioWorklet example</h1>
+    <button>Make Telephone Sound</button>
+    <pre></pre>
+  </body>
+
+  <script>
+
+    // Display this script in page's preformatted secion
+    const myScript = document.querySelector('script');
+    const pre = document.querySelector('pre');
+    pre.innerHTML = myScript.innerHTML;
+
+    let Player_node;
+
+    const audioContext = new AudioContext({latencyHint: "interactive", sampleRate: 16000});
+
+    audioContext.audioWorklet.addModule('audio_werklet_proc.js').then(() => {
+        Player_node = new AudioWorkletNode(audioContext, 'pcm_player');
+        Player_node.connect(audioContext.destination)
+        setTimeout(()=>audioContext.close(), 30000);
+    });
+
+    const button = document.querySelector('button');
+    button.onclick = function() {
+
+        console.log('XXX - Sending test waveform to Worklet');
+        
+        const sample_hz = 16000;
+        const td_480 = sample_hz / 480.0 / Math.PI / 2.0;
+        const td_620 = sample_hz / 620.0 / Math.PI / 2.0;
+
+        // Build the test waveform
+        const samples = 157 * 250;
+        let wave = new Int16Array(samples);
+        for (let s = 0; s < samples; s++) {
+            let sample = (Math.sin(s / td_480) + Math.sin(s / td_620)) / 2.0;
+            wave[s] = Math.trunc(0x3fff * sample);
+        }
+
+        // Send it in chunks to the Worklet processor
+        for (let n = 0; n < 250; n++) {
+            let array = wave.slice(n * 157, n * 157 + 157);
+            Player_node.port.postMessage(array);
+        }
+    }
+
+  </script>
+
+</html>
+
